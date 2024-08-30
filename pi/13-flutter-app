@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e -x
+
+if [ "$USER" == "root" ]; then
+    echo "Please do not run this in sudo"
+    exit 1
+fi
+
+sudo apt-get -y install lz4
+
+lz4 -d -c flutter_assets.tar.lz4 | tar -C ${HOME} -x
+

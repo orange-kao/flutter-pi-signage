@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e -x
+
+current_cmdline=$(cat /boot/firmware/cmdline.txt | sed "s# console=tty1 # #")
+echo "${current_cmdline} logo.nologo vt.global_cursor_default=0" > /boot/firmware/cmdline.txt
+
+cat <<EOF > /boot/firmware/config.txt.tmp
+disable_splash=1
+EOF
+cat /boot/firmware/config.txt >> /boot/firmware/config.txt.tmp
+cp /boot/firmware/config.txt.tmp /boot/firmware/config.txt
+rm /boot/firmware/config.txt.tmp
+
+systemctl stop getty@tty1.service
+systemctl disable getty@tty1.service
+

@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e -x
+
+apt-get -y install watchdog
+
+if ! [ -e "/boot/firmware/config.txt.ori" ]; then
+    cp -a /boot/firmware/config.txt /boot/firmware/config.txt.ori
+fi
+
+cat <<EOF > /boot/firmware/config.txt.tmp
+dtparam=watchdog=on
+EOF
+cat /boot/firmware/config.txt >> /boot/firmware/config.txt.tmp
+cp /boot/firmware/config.txt.tmp /boot/firmware/config.txt
+rm /boot/firmware/config.txt.tmp
+
+if ! [ -e "/etc/watchdog.conf.ori" ]; then
+    cp -a /etc/watchdog.conf /etc/watchdog.conf.ori
+fi
+
+cat <<EOF >> /etc/watchdog.conf
+watchdog-timeout = 15
+EOF
+

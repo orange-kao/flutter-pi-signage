@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e -x
+
+if [ "$SUDO_USER" == "" ] || [ "$SUDO_USER" == "root" ]; then
+    echo "Should run this in sudo from a normal user"
+    exit 1
+fi
+
+apt-get -y install python3-flask rclone screen gunicorn lz4
+
+# create user
+useradd flask-signage || :
+mkdir -p /home/flask-signage
+chmod 700 /home/flask-signage
+
+# rclone config
+mkdir -p /home/flask-signage/.config/rclone
+chmod 700 /home/flask-signage/.config/rclone/
+cp rclone.conf /home/flask-signage/.config/rclone/
+chmod 600 /home/flask-signage/.config/rclone/rclone.conf
+
+# flask app for generating file list
+mkdir -p /home/flask-signage/flask-app-signage-reload
+cp flask-app-signage-reload/* /home/flask-signage/flask-app-signage-reload/
+
+chown -R flask-signage:flask-signage /home/flask-signage
+
+# Flutter web build
+mkdir -p /var/www/digital-signage
+lz4 -k -d -c signage-preview.tar.lz4 | tar -C /var/www/digital-signage -x
+chown -R flask-signage /var/www/digital-signage
+chmod 755 /var/www/digital-signage
+
+# apache
+cp sites-available/signage-preview.conf        /etc/apache2/sites-available/
+cp sites-available/signage-preview-le-ssl.conf /etc/apache2/sites-available/
+a2ensite signage-preview.conf
+a2ensite signage-preview-le-ssl.conf
+a2enmod rewrite
+a2enmod proxy
+a2enmod proxy_http
+systemctl restart apache2
+
+mkdir -p /home/flask-signage/.ssh
+chmod 700 /home/flask-signage/.ssh
+cp /home/${SUDO_USER}/.ssh/authorized_keys /home/flask-signage/.ssh/authorized_keys
+
+mkdir -p /home/flask-signage/.config/systemd/user
+cp systemd-unit-flask-signage-reload /home/flask-signage/.config/systemd/user/flask-signage-reload.service
+chown -R flask-signage:flask-signage /home/flask-signage
+loginctl enable-linger flask-signage
+
+set +x
+echo "TODO: ssh to flask-signage user and"
+echo "systemctl --user daemon-reload"
+echo "systemctl --user enable flask-signage-reload.service"
+echo "systemctl --user start flask-signage-reload.service"
+

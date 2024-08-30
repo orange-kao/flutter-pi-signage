@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e -x
+
+if [ "$USER" == "root" ]; then
+    echo "Please do not run this in sudo"
+    exit 1
+fi
+
+sudo apt-get -y install rclone
+
+if [ -f "rclone.conf" ]; then
+    mkdir -p ~/.config/rclone
+    umask 177
+    cp rclone.conf ~/.config/rclone/rclone.conf
+else
+    rclone config
+fi
+

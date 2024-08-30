@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e -x
+
+if [ "$USER" == "root" ]; then
+    echo "Please do not run this in sudo"
+    exit 1
+fi
+
+sudo apt-get -y install screen
+
+cp scripts/* ${HOME}/
+crontab crontab-config
+

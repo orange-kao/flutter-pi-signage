@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e -x
+
+apt-get -y install iptables-persistent
+cat iptables-v4 | iptables-restore
+cat iptables-v6 | ip6tables-restore
+netfilter-persistent save
+

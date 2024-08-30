@@ -1,0 +1,12 @@
+[Unit]
+Description=flask-signage-reload
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/home/flask-signage/flask-app-signage-reload/run-prod
+Restart=always
+
+[Install]
+WantedBy=default.target
+

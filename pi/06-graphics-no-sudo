@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e -x
+
+if [ "$SUDO_USER" == "" ] || [ "$SUDO_USER" == "root" ]; then
+    echo "Should run this in sudo from a normal user"
+    exit 1
+fi
+
+usermod -a -G render ${SUDO_USER}
+sed 's#\[all\]#\[all\]\ngpu_mem=64#' -i /boot/firmware/config.txt
+

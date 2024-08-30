@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e -x
+
+if [ "$USER" == "root" ]; then
+    echo "Please do not run this in sudo"
+    exit 1
+fi
+
+sudo apt-get -y install cmake libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev libdrm-dev libgbm-dev ttf-mscorefonts-installer fontconfig libsystemd-dev libinput-dev libudev-dev  libxkbcommon-dev
+sudo apt-get -y install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-alsa
+sudo fc-cache
+
+sudo apt-get -y install git
+cd ${HOME}
+git clone https://github.com/ardera/flutter-pi.git
+cd flutter-pi
+git reset --hard 37bd9773c1938e5f76208bc4e8632fdbbb4190ff
+mkdir build
+cd build
+cmake ..
+make -j`nproc`
+sudo make install
+

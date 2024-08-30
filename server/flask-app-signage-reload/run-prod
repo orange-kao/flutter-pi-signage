@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd "$(dirname "${0}")"
+gunicorn --config gunicorn_config.py app:app
+

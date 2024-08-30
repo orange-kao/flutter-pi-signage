@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e -x
+
+apt-get -y install zram-tools
+
+dphys-swapfile uninstall
+systemctl disable dphys-swapfile.service
+
+if ! [ -e "/etc/default/zramswap.ori" ]; then
+    cp -a /etc/default/zramswap /etc/default/zramswap.ori
+fi
+
+cat <<-EOF > /etc/default/zramswap
+ALGO=lz4
+PERCENT=50
+EOF
+
+systemctl reload zramswap.service
+

@@ -1,0 +1,56 @@
+#!/bin/bash
+set -e -x
+
+which bash file mkdir rm which
+
+# flutter
+sudo apt-get -y install curl git unzip xz-utils zip libglu1-mesa
+
+# flutter Linux app
+sudo apt-get -y install \
+      clang cmake git \
+      ninja-build pkg-config \
+      libgtk-3-dev liblzma-dev \
+      libstdc++-12-dev
+
+# to create tarball
+sudo apt-get -y install lz4
+
+# Use slightly older version because there is a major bug on 3.24.0 in web mode
+if ! [ -f "flutter_linux_3.22.3-stable.tar.xz" ]; then
+    wget "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.22.3-stable.tar.xz"
+fi
+tar xf flutter_linux_3.22.3-stable.tar.xz
+
+export PATH=$PWD/flutter/bin:$HOME/.pub-cache/bin:$PATH
+
+flutter doctor
+flutter pub global activate flutterpi_tool ^0.5.4
+
+pushd .
+flutter create linux_app
+cp linux.dart linux_app/lib/main.dart
+cd linux_app
+flutterpi_tool build --arch=arm --cpu=generic --release
+popd
+tar -C linux_app/build -c flutter_assets | lz4 -c > flutter_assets.tar.lz4
+
+pushd .
+flutter create web_app
+cp web.dart web_app/lib/main.dart
+cd web_app
+flutter pub add http
+flutter build web --web-renderer html --base-href /signage-preview/
+popd
+rm -fR web_app/build/signage-preview
+cp -a web_app/build/web web_app/build/signage-preview
+tar -C web_app/build -c signage-preview | lz4 -c > signage-preview.tar.lz4
+rm -fR web_app/build/signage-preview
+
+if [ -d "../pi" ]; then
+    cp flutter_assets.tar.lz4 ../pi/
+fi
+if [ -d "../server" ]; then
+    cp signage-preview.tar.lz4 ../server/
+fi
+

@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+
+import os
+import random
+import time
+import subprocess
+
+RCLONE_NOTHING_TO_TRANSFER_MESSAGE = "There was nothing to transfer"
+
+def sleep_random(min_sec, max_sec):
+    sleep_seconds = random.uniform(min_sec, max_sec)
+    print(f"Sleeping for {sleep_seconds} seconds")
+    time.sleep(sleep_seconds)
+
+os.chdir(os.environ.get("HOME"))
+sleep_random(10, 60)
+
+consistency_check_completed = False  # consistency between tmp and non-tmp directory
+while True:
+    rclone_ret = subprocess.run(["rclone", "sync", "-v", "signage-slides:./", "./signage-slides-tmp/"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if rclone_ret.returncode != 0:
+        # something is wrong
+        print(rclone_ret.stdout)
+        print(rclone_ret.stderr)
+        print("Failed to sync from WebDAV server")
+    else:
+        content_changed = True
+        if (RCLONE_NOTHING_TO_TRANSFER_MESSAGE in rclone_ret.stdout or RCLONE_NOTHING_TO_TRANSFER_MESSAGE in rclone_ret.stderr) and consistency_check_completed == True:
+            print("Nothing to transfer")
+            content_changed = False
+        else:
+            print(rclone_ret.stdout)
+            print(rclone_ret.stderr)
+            diff_ret = subprocess.run(["diff", "-r", "./signage-slides-tmp/", "./signage-slides/"])
+            if diff_ret.returncode != 0:
+                content_changed = True
+                print("Directory content are different")
+            else:
+                content_changed = False
+                print("Directory content are the same")
+            consistency_check_completed = True
+
+        if content_changed:
+            print("Content changed, sync direcotry and restart flutter application")
+            subprocess.run(["rsync", "-av", "--delete", "./signage-slides-tmp/", "./signage-slides/"])
+            subprocess.run(["killall", "flutter-pi"])
+    sleep_random(30, 60)
+
